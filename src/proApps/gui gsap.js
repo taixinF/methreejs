@@ -1,6 +1,4 @@
-
-
-import './style.css'
+import '../style.css'
 import * as THREE from "three";
 import {
     OrbitControls
