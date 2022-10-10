@@ -24,6 +24,8 @@ const scene = new THREE.Scene();
 * Texture
 * */
 const textureLoader = new THREE.TextureLoader()
+const cubeTextureLoader = new THREE.CubeTextureLoader()
+
 const doorColorTexture = textureLoader.load('../static/textures/door/color.jpg')
 const doorAlphaTexture = textureLoader.load('../static/textures/door/alpha.jpg')
 const doorHeightTexture = textureLoader.load('../static/textures/door/height.jpg')
@@ -122,34 +124,58 @@ THREE.DoubleSide
 // 材质的粗糙程度。0.0表示平滑的镜面反射，1.0表示完全漫反射。默认值为1.0。如果还提供roughnessMap，则两个值相乘。
 // .roughnessMap : Texture
 // 该纹理的绿色通道用于改变材质的粗糙度。
-const material = new THREE.MeshStandardMaterial()
+// const material = new THREE.MeshStandardMaterial()
 //如果图层有金属度和很粗糙度可以不添加这两个属性
 // material.metalness = 0.3
 // material.roughness = 0.5
-material.map = doorColorTexture
-material.side = THREE.DoubleSide
+// material.map = doorColorTexture
+// material.side = THREE.DoubleSide
 //环境遮挡贴图
 // .aoMap : Texture
 // 该纹理的红色通道用作环境遮挡贴图。默认值为null。aoMap需要第二组UV。
-material.aoMap = doorAmbientOcclusionTexture
+// material.aoMap = doorAmbientOcclusionTexture
 //aoMapIntensity : Float
 // 环境遮挡效果的强度。默认值为1。零是不遮挡效果。
-material.aoMapIntensity = 1
+// material.aoMapIntensity = 1
 // .displacementMap : Texture
 // 位移贴图会影响网格顶点的位置，与仅影响材质的光照和阴影的其他贴图不同，移位的顶点可以投射阴影，阻挡其他对象，
 // 以及充当真实的几何体。位移纹理是指：网格的所有顶点被映射为图像中每个像素的值（白色是最高的），并且被重定位。
 // .displacementScale : Float
-material.displacementMap = doorHeightTexture
+// material.displacementMap = doorHeightTexture
 // material.wireframe = true
 // displacementScale : Float
 // 位移贴图对网格的影响程度（黑色是无位移，白色是最大位移）。如果没有设置位移贴图，则不会应用此值。默认值为1。
-material.displacementScale = 0.1
+// material.displacementScale = 0.1
 // .metalnessMap : Texture
 // 该纹理的蓝色通道用于改变材质的金属度。
-material.metalnessMap = doorMetalnessTexture
+// material.metalnessMap = doorMetalnessTexture
 // .roughnessMap : Texture
 // 该纹理的绿色通道用于改变材质的粗糙度。
-material.roughnessMap = doorRoughnessTexture
+// material.roughnessMap = doorRoughnessTexture
+//.normalMap : Texture
+// 用于创建法线贴图的纹理。RGB值会影响每个像素片段的曲面法线，并更改颜色照亮的方式。法线贴图不会改变曲面的实际形状，只会改变光照。
+// In case the material has a normal map authored using the left handed convention,
+//=the y component of normalScale should be negated to compensate for the different handedness.
+// material.normalMap = doorNormalTexture
+//.normalScale : Vector2
+// 法线贴图对材质的影响程度。典型范围是0-1。默认值是Vector2设置为（1,1）。
+// 二维向量（Vector2）
+// 表示2D vector（二维向量）的类。 一个二维向量是一对有顺序的数字（标记为x和y），可用来表示很多事物，例如：
+// 一个位于二维空间中的点（例如一个在平面上的点）。
+// 一个在平面上的方向与长度的定义。在three.js中，长度总是从(0, 0)到(x, y)的 Euclidean distance（欧几里德距离，即直线距离）， 方向也是从(0, 0)到(x, y)的方向。
+// 任意的、有顺序的一对数字。
+// 其他的一些事物也可以使用二维向量进行表示，比如说动量矢量、复数等等；但以上这些是它在three.js中的常用用途。
+// 对 Vector2 实例进行遍历将按相应的顺序生成它的分量 (x, y)。
+// material.normalScale.set(0.5, 0.5)
+// material.transparent = true
+// .alphaMap : Texture
+// alpha贴图是一张灰度纹理，用于控制整个表面的不透明度。（黑色：完全透明；白色：完全不透明）。 默认值为null。
+// material.alphaMap = doorAlphaTexture
+
+// 二、环境贴图
+const material = new THREE.MeshStandardMaterial()
+material.metalness = 0.7
+material.roughness = 0.2
 
 
 gui.add(material, 'metalness').min(0).max(1).step(0.001)
