@@ -19,14 +19,14 @@ const scene = new THREE.Scene()
  * Lights
  */
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
-// scene.add(ambientLight)
+scene.add(ambientLight)
 
 // 平行光（DirectionalLight）
 // 平行光是沿着特定方向发射的光。这种光的表现像是无限远,从它发出的光线都是平行的。
 // 常常用平行光来模拟太阳光 的效果; 太阳足够远，因此我们可以认为太阳的位置是无限远，所以我们认为从太阳发出的光线也都是平行的。
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.3);
 directionalLight.position.set(1, 0.25, 0)
-// scene.add(directionalLight);
+scene.add(directionalLight);
 
 //半球光（HemisphereLight）
 // 光源直接放置于场景之上，光照颜色从天空光线颜色渐变到地面光线颜色。
@@ -35,8 +35,8 @@ directionalLight.position.set(1, 0.25, 0)
 // skyColor - (可选参数) 天空中发出光线的颜色。 缺省值 0xffffff。
 // groundColor - (可选参数) 地面发出光线的颜色。 缺省值 0xffffff。
 // intensity - (可选参数) 光照强度。 缺省值 1。
-const light = new THREE.HemisphereLight('skyblue', 'green', 0.5);
-// scene.add(light);
+const hemisphereLight = new THREE.HemisphereLight(0xff0000, 0x0000ff, 0.3);
+scene.add(hemisphereLight);
 
 // 点光源（PointLight）
 // 从一个点向各个方向发射的光源。一个常见的例子是模拟一个灯泡发出的光。
@@ -78,8 +78,53 @@ scene.add((rectLight))
 // penumbra - 聚光锥的半影衰减百分比。在0和1之间的值。默认为0。
 // decay - 沿着光照距离的衰减量。
 const spotLight = new THREE.SpotLight(0x78ff00, 0.5, 10, Math.PI * 0.1, 0.25, 1)
+//光范围
 spotLight.position.set(0, 2, 3)
 scene.add(spotLight)
+// 光源移动
+spotLight.target.position.x = -0.75
+scene.add(spotLight.target)
+
+
+//helpers
+// HemisphereLightHelper
+// 创建一个虚拟的球形网格 Mesh 的辅助对象来模拟 半球形光源 HemisphereLight.
+// 构造函数
+// HemisphereLightHelper( light : HemisphereLight, sphereSize : Number, color : Hex )
+// light -- 被模拟的光源.size -- 用于模拟光源的网格尺寸
+//     .color -- (可选的) 如果没有赋值辅助对象将使用光源的颜色.
+const hemisphereLightHelper = new THREE.HemisphereLightHelper(hemisphereLight, 0.2)
+scene.add(hemisphereLightHelper)
+
+// DirectionalLightHelper
+// 用于模拟场景中平行光 DirectionalLight 的辅助对象. 其中包含了表示光位置的平面和表示光方向的线段.构造函数
+// DirectionalLightHelper( light : DirectionalLight, size : Number, color : Hex )
+// light-- 被模拟的光源.size -- (可选的) 平面的尺寸. 默认为 1.
+// color -- (可选的) 如果没有设置颜色将使用光源的颜色.
+const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, 0.2);
+scene.add(directionalLightHelper)
+
+// 构造函数
+// PolarGridHelper( radius : Number, sectors : Number, rings : Number, divisions : Number, color1 : Color, color2 : Color )
+// radius -- 极坐标格半径. 可以为任何正数. 默认为 10.
+// sectors -- The number of sectors the grid will be divided into. This can be any positive integer. Default is 16.
+// rings -- The number of rings. This can be any positive integer. Default is 8.
+// divisions -- 圆圈细分段数. 可以为任何大于或等于3的正整数. 默认为 64.
+// color1 -- 极坐标格使用的第一个颜色. 值可以为 Color 类型, 16进制 和 CSS 颜色名. 默认为 0x444444
+// color2 -- 极坐标格使用的第二个颜色. 值可以为 Color 类型, 16进制 和 CSS 颜色名. 默认为 0x888888
+const pointLightHelper = new THREE.PointLightHelper(pointLight, 0.2)
+scene.add(pointLightHelper)
+
+// 构造函数
+// SpotLightHelper( light : SpotLight, color : Hex )
+// light -- 被模拟的聚光灯 SpotLight
+// .color -- (可选的) 如果没有赋值辅助对象将使用光源的颜色.
+const spotLightHelper = new THREE.SpotLightHelper(spotLight);
+scene.add(spotLightHelper)
+//请求windows 动画帧矫正聚光灯位置
+window.requestAnimationFrame(() => {
+    spotLightHelper.update()
+})
 
 
 /**
