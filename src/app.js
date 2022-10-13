@@ -1,17 +1,7 @@
 import './style.css'
 import * as THREE from 'three'
-import {
-    OrbitControls
-} from 'three/examples/jsm/controls/OrbitControls.js'
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'dat.gui'
-
-/*
-* texture
-* */
-const textureLoader = new THREE.TextureLoader()
-const backedShadow = textureLoader.load('../static/textures/bakedShadow.jpg')
-const simpleShadow = textureLoader.load('../static/textures/simpleShadow.jpg')
-
 
 /**
  * Base
@@ -26,137 +16,219 @@ const canvas = document.querySelector('canvas.webgl')
 const scene = new THREE.Scene()
 
 /**
+ * Textures
+ */
+const textureLoader = new THREE.TextureLoader()
+
+const doorColorTexture = textureLoader.load('../static/textures/door/color.jpg')
+const doorAlphaTexture = textureLoader.load('../static/textures/door/alpha.jpg')
+const doorAmbientOcclusionTexture = textureLoader.load('../static/textures/door/ambientOcclusion.jpg')
+const doorHeightTexture = textureLoader.load('../static/textures/door/height.jpg')
+const doorNormalTexture = textureLoader.load('../static/textures/door/normal.jpg')
+const doorMetalnessTexture = textureLoader.load('../static/textures/door/metalness.jpg')
+const doorRoughnessTexture = textureLoader.load('../static/textures/door/roughness.jpg')
+
+const bricksColorTexture = textureLoader.load('../static/textures/bricks/color.jpg')
+const bricksAmbientOcclusionTexture = textureLoader.load('../static/textures/bricks/ambientOcclusion.jpg')
+const bricksNormalTexture = textureLoader.load('../static/textures/bricks/normal.jpg')
+const bricksRoughnessTexture = textureLoader.load('../static/textures/bricks/roughness.jpg')
+
+const grassColorTexture = textureLoader.load('../static/textures/grass/color.jpg')
+const grassAmbientOcclusionTexture = textureLoader.load('../static/textures/grass/ambientOcclusion.jpg')
+const grassNormalTexture = textureLoader.load('../static/textures/grass/normal.jpg')
+const grassRoughnessTexture = textureLoader.load('../static/textures/grass/roughness.jpg')
+
+grassColorTexture.repeat.set(8, 8)
+grassAmbientOcclusionTexture.repeat.set(8, 8)
+grassNormalTexture.repeat.set(8, 8)
+grassRoughnessTexture.repeat.set(8, 8)
+
+grassColorTexture.wrapS = THREE.RepeatWrapping
+grassAmbientOcclusionTexture.wrapS = THREE.RepeatWrapping
+grassNormalTexture.wrapS = THREE.RepeatWrapping
+grassRoughnessTexture.wrapS = THREE.RepeatWrapping
+
+grassColorTexture.wrapT = THREE.RepeatWrapping
+grassAmbientOcclusionTexture.wrapT = THREE.RepeatWrapping
+grassNormalTexture.wrapT = THREE.RepeatWrapping
+grassRoughnessTexture.wrapT = THREE.RepeatWrapping
+
+/**
+ * House
+ */
+// House container
+const house = new THREE.Group()
+scene.add(house)
+
+// Walls
+const walls = new THREE.Mesh(
+    new THREE.BoxBufferGeometry(4, 2.5, 4),
+    new THREE.MeshStandardMaterial({
+        map: bricksColorTexture,
+        aoMap: bricksAmbientOcclusionTexture,
+        normalMap: bricksNormalTexture,
+        roughnessMap: bricksRoughnessTexture
+    })
+)
+walls.castShadow = true
+walls.geometry.setAttribute('uv2', new THREE.Float32BufferAttribute(walls.geometry.attributes.uv.array, 2))
+walls.position.y = 1.25
+house.add(walls)
+
+// Roof
+const roof = new THREE.Mesh(
+    new THREE.ConeBufferGeometry(3.5, 1, 4),
+    new THREE.MeshStandardMaterial({color: '#b35f45'})
+)
+roof.rotation.y = Math.PI * 0.25
+roof.position.y = 2.5 + 0.5
+house.add(roof)
+
+// Door
+const door = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(2, 2, 100, 100),
+    new THREE.MeshStandardMaterial({
+        map: doorColorTexture,
+        transparent: true,
+        alphaMap: doorAlphaTexture,
+        aoMap: doorAmbientOcclusionTexture,
+        displacementMap: doorHeightTexture,
+        displacementScale: 0.1,
+        normalMap: doorNormalTexture,
+        metalnessMap: doorMetalnessTexture,
+        roughnessMap: doorRoughnessTexture
+    })
+)
+door.geometry.setAttribute('uv2', new THREE.Float32BufferAttribute(door.geometry.attributes.uv.array, 2))
+door.position.y = 1
+door.position.z = 2 + 0.01
+house.add(door)
+
+// Bushes
+const bushGeometry = new THREE.SphereBufferGeometry(1, 16, 16)
+const bushMaterial = new THREE.MeshStandardMaterial({color: '#89c854'})
+
+const bush1 = new THREE.Mesh(bushGeometry, bushMaterial)
+bush1.castShadow = true
+bush1.scale.set(0.5, 0.5, 0.5)
+bush1.position.set(0.8, 0.2, 2.2)
+
+const bush2 = new THREE.Mesh(bushGeometry, bushMaterial)
+bush2.castShadow = true
+bush2.scale.set(0.25, 0.25, 0.25)
+bush2.position.set(1.4, 0.1, 2.1)
+
+const bush3 = new THREE.Mesh(bushGeometry, bushMaterial)
+bush3.castShadow = true
+bush3.scale.set(0.4, 0.4, 0.4)
+bush3.position.set(-0.8, 0.1, 2.2)
+
+const bush4 = new THREE.Mesh(bushGeometry, bushMaterial)
+bush4.castShadow = true
+bush4.scale.set(0.15, 0.15, 0.15)
+bush4.position.set(-1, 0.05, 2.6)
+
+house.add(bush1, bush2, bush3, bush4)
+
+// Graves
+const graves = new THREE.Group()
+scene.add(graves)
+
+const graveGeometry = new THREE.BoxBufferGeometry(0.6, 0.8, 0.1)
+const graveMaterial = new THREE.MeshStandardMaterial({color: '#727272'})
+
+for (let i = 0; i < 50; i++) {
+    const angle = Math.random() * Math.PI * 2 // Random angle
+    const radius = 3 + Math.random() * 6      // Random radius
+    const x = Math.cos(angle) * radius        // Get the x position using cosinus
+    const z = Math.sin(angle) * radius        // Get the z position using sinus
+
+    // Create the mesh
+    const grave = new THREE.Mesh(graveGeometry, graveMaterial)
+    grave.castShadow = true
+
+    // Position
+    grave.position.set(x, 0.3, z)
+
+    // Rotation
+    grave.rotation.z = (Math.random() - 0.5) * 0.4
+    grave.rotation.y = (Math.random() - 0.5) * 0.4
+
+    // Add to the graves container
+    graves.add(grave)
+}
+
+// Floor
+const floor = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(20, 20),
+    new THREE.MeshStandardMaterial({
+        map: grassColorTexture,
+        aoMap: grassAmbientOcclusionTexture,
+        normalMap: grassNormalTexture,
+        roughnessMap: grassRoughnessTexture
+    })
+)
+floor.receiveShadow = true
+floor.geometry.setAttribute('uv2', new THREE.Float32BufferAttribute(floor.geometry.attributes.uv.array, 2))
+floor.rotation.x = -Math.PI * 0.5
+floor.position.y = 0
+scene.add(floor)
+
+/**
  * Lights
  */
 // Ambient light
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.3)
-gui.add(ambientLight, 'intensity').min(0).max(1).step(0.001)
+const ambientLight = new THREE.AmbientLight('#b9d5ff', 0.3)
 scene.add(ambientLight)
-ambientLight.castShadow = false
 
 // Directional light
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.3)
-directionalLight.position.set(2, 2, -1)
-gui.add(directionalLight, 'intensity').min(0).max(1).step(0.001)
-gui.add(directionalLight.position, 'x').min(-5).max(5).step(0.001)
-gui.add(directionalLight.position, 'y').min(-5).max(5).step(0.001)
-gui.add(directionalLight.position, 'z').min(-5).max(5).step(0.001)
-scene.add(directionalLight)
-// .castShadow : Boolean
-// 如果设置为 true 该平行光会产生动态阴影。 警告: 这样做的代价比较高而且需要一直调整到阴影看起来正确.
-// 查看 DirectionalLightShadow 了解详细信息。该属性默认为 false。
-directionalLight.castShadow = false
-//     .shadow : DirectionalLightShadow
-// 这个 DirectionalLightShadow 对象用来计算该平行光产生的阴影。
-//     .mapSize : Vector2
-// 一个Vector2定义阴影贴图的宽度和高度。
-directionalLight.shadow.mapSize.x = 1024
-directionalLight.shadow.mapSize.y = 1024
-directionalLight.shadow.camera.near = 2
-directionalLight.shadow.camera.top = 2
-directionalLight.shadow.camera.right = 2
-directionalLight.shadow.camera.bottom = -2
-directionalLight.shadow.camera.left = -2
-directionalLight.shadow.camera.far = 6
-// .radius : Float
-// 将此值设置为大于1的值将模糊阴影的边缘。
-// 较高的值会在阴影中产生不必要的条带效果 - 更大的mapSize将允许在这些效果变得可见之前使用更高的值。
-// 请注意，如果[page：WebGLRenderer.shadowMap.type]设置为BasicShadowMap，将会无效。
-// directionalLight.shadow.radius = 10
+const moonLight = new THREE.DirectionalLight('#b9d5ff', 0.12)
+moonLight.castShadow = true
+moonLight.shadow.mapSize.width = 256
+moonLight.shadow.mapSize.height = 256
+moonLight.shadow.camera.far = 15
+moonLight.position.set(4, 5, -2)
+scene.add(moonLight)
 
-//SpotLight
-const spotLight = new THREE.SpotLight(0xffffff, 0.3, 10, Math.PI * 0.3)
-spotLight.position.set(0, 2, 2)
-spotLight.castShadow = false
-spotLight.shadow.mapSize.width = 1024
-spotLight.shadow.mapSize.height = 1024
-spotLight.shadow.camera.fov = 30 //聚光宽度
-spotLight.shadow.camera.near = 1
-spotLight.shadow.camera.far = 6
-scene.add(spotLight)
-scene.add(spotLight.target)
-const spotLightCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera)
-spotLightCameraHelper.visible = false
-scene.add(spotLightCameraHelper)
+// Door light
+const doorLight = new THREE.PointLight('#ff7d46', 1, 7)
+doorLight.castShadow = true
+doorLight.shadow.mapSize.width = 256
+doorLight.shadow.mapSize.height = 256
+doorLight.shadow.camera.far = 7
 
-//pointLight
-const pointLight = new THREE.PointLight(0xffffff, 0.4)
-pointLight.castShadow = false
-pointLight.shadow.mapSize.width = 1024
-pointLight.shadow.mapSize.hieght = 1024
-pointLight.shadow.camera.near = 0.1
-pointLight.shadow.camera.far = 6
-pointLight.position.set(-1, 1, 0)
-scene.add(pointLight)
-const pointLightCameraHelper = new THREE.CameraHelper(pointLight.shadow.camera)
-pointLightCameraHelper.visible = false
-scene.add(pointLightCameraHelper)
-
-
-// CameraHelper
-// 构造函数
-// CameraHelper( camera : Camera )
-// camera -- 被模拟的相机.
-//     为指定相机创建一个新的相机辅助对象 CameraHelper .
-//     属性
-// 请到基类 LineSegments 页面查看公共属性.
-//     .camera : Camera
-// 被模拟的相机.
-//     .pointMap : Object
-// 包含用于模拟相机的点.
-//     .matrix : Object
-// 请参考相机的世界矩阵 camera.matrixWorld.
-//     .matrixAutoUpdate : Object
-// 请查看 Object3D.matrixAutoUpdate. 这里设置为 false 表示辅助对象 使用相机的 matrixWorld.
-const directionLightCameraHelper = new THREE.CameraHelper(directionalLight.shadow.camera)
-directionLightCameraHelper.visible = false
-scene.add(directionLightCameraHelper)
+doorLight.position.set(0, 2.2, 2.7)
+house.add(doorLight)
 
 /**
- * Materials
+ * Ghosts
  */
-const material = new THREE.MeshStandardMaterial()
-material.roughness = 0.7
-gui.add(material, 'metalness').min(0).max(1).step(0.001)
-gui.add(material, 'roughness').min(0).max(1).step(0.001)
+const ghost1 = new THREE.PointLight('#ff00ff', 3, 3)
+ghost1.castShadow = true
+ghost1.shadow.mapSize.width = 256
+ghost1.shadow.mapSize.height = 256
+ghost1.shadow.camera.far = 7
+scene.add(ghost1)
+
+const ghost2 = new THREE.PointLight('#00ffff', 3, 3)
+ghost2.castShadow = true
+ghost2.shadow.mapSize.width = 256
+ghost2.shadow.mapSize.height = 256
+ghost2.shadow.camera.far = 7
+scene.add(ghost2)
+
+const ghost3 = new THREE.PointLight('#ff7800', 3, 3)
+ghost3.castShadow = true
+ghost3.shadow.mapSize.width = 256
+ghost3.shadow.mapSize.height = 256
+ghost3.shadow.camera.far = 7
+scene.add(ghost3)
 
 /**
- * Objects
+ * Fog
  */
-const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.5, 32, 32),
-    material
-)
-
-//.castShadow : Boolean
-// 对象是否被渲染到阴影贴图中。默认值为false。
-sphere.castShadow = true
-
-const plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(5, 5),
-    material
-)
-plane.rotation.x = -Math.PI * 0.5
-plane.position.y = -0.5
-
-//.receiveShadow : Boolean
-// 材质是否接收阴影。默认值为false。
-plane.receiveShadow = true
-
-scene.add(sphere, plane)
-
-
-const sphereShaow = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.5, 1.5),
-    new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        transparent: true,
-        alphaMap: simpleShadow
-    })
-)
-sphereShaow.rotation.x = -Math.PI * 0.5
-sphereShaow.position.y = plane.position.y + 0.01
-scene.add(sphereShaow)
+const fog = new THREE.Fog('#262837', 1, 15)
+scene.fog = fog
 
 /**
  * Sizes
@@ -185,9 +257,9 @@ window.addEventListener('resize', () => {
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.x = 1
-camera.position.y = 1
-camera.position.z = 2
+camera.position.x = 4
+camera.position.y = 2
+camera.position.z = 5
 scene.add(camera)
 
 // Controls
@@ -200,34 +272,11 @@ controls.enableDamping = true
 const renderer = new THREE.WebGLRenderer({
     canvas: canvas
 })
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
+renderer.setClearColor('#262837')
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-// renderer .shadowMap : WebGLShadowMap
-// 如果使用，它包含阴影贴图的引用。
-// - enabled: 如果设置开启，允许在场景中使用阴影贴图。默认是 false。
-// - autoUpdate: 启用场景中的阴影自动更新。默认是true
-// 如果不需要动态光照/阴影, 则可以在实例化渲染器时将之设为false
-// - needsUpdate: 当被设为true, 场景中的阴影贴图会在下次render调用时刷新。默认是false
-// 如果你已经禁用了阴影贴图的自动更新(shadowMap.autoUpdate = false), 那么想要在下一次渲染时更新阴影的话就需要将此值设为true
-// - type: 定义阴影贴图类型 (未过滤, 关闭部分过滤, 关闭部分双线性过滤), 可选值有:
-// THREE.BasicShadowMap
-// THREE.PCFShadowMap (默认)
-// THREE.PCFSoftShadowMap
-// THREE.VSMShadowMap
-// 详见Renderer constants
-renderer.shadowMap.enabled = false
-// 阴影类型
-// THREE.BasicShadowMap
-// THREE.PCFShadowMap
-// THREE.PCFSoftShadowMap
-// THREE.VSMShadowMap
-// 这些常量定义了WebGLRenderer中shadowMap.type的属性。
-// BasicShadowMap 能够给出没有经过过滤的阴影映射 —— 速度最快，但质量最差。
-// PCFShadowMap 为默认值，使用Percentage-Closer Filtering (PCF)算法来过滤阴影映射。
-// PCFSoftShadowMap 和PCFShadowMap一样使用 Percentage-Closer Filtering (PCF) 算法过滤阴影映射，但在使用低分辨率阴影图时具有更好的软阴影。
-// VSMShadowMap 使用Variance Shadow Map (VSM)算法来过滤阴影映射。当使用VSMShadowMap时，所有阴影接收者也将会投射阴影。
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
-
 
 /**
  * Animate
@@ -237,13 +286,21 @@ const clock = new THREE.Clock()
 const tick = () => {
     const elapsedTime = clock.getElapsedTime()
 
-    sphere.position.x = Math.cos(elapsedTime)
-    sphere.position.z = Math.sin(elapsedTime)
-    sphere.position.y = Math.abs(Math.sin(elapsedTime * 3))
+    // Ghosts
+    const ghost1Angle = elapsedTime * 0.5
+    ghost1.position.x = Math.cos(ghost1Angle) * 4
+    ghost1.position.z = Math.sin(ghost1Angle) * 4
+    ghost1.position.y = Math.sin(elapsedTime * 3)
 
-    sphereShaow.position.x = sphere.position.x
-    sphereShaow.position.z = sphere.position.z
-    sphereShaow.material.opacity = (1 - Math.abs(sphere.position.y)) * 0.3
+    const ghost2Angle = -elapsedTime * 0.32
+    ghost2.position.x = Math.cos(ghost2Angle) * 5
+    ghost2.position.z = Math.sin(ghost2Angle) * 5
+    ghost2.position.y = Math.sin(elapsedTime * 4) + Math.sin(elapsedTime * 2.5)
+
+    const ghost3Angle = -elapsedTime * 0.18
+    ghost3.position.x = Math.cos(ghost3Angle) * (7 + Math.sin(elapsedTime * 0.32))
+    ghost3.position.z = Math.sin(ghost3Angle) * (7 + Math.sin(elapsedTime * 0.5))
+    ghost3.position.y = Math.sin(elapsedTime * 4) + Math.sin(elapsedTime * 2.5)
 
     // Update controls
     controls.update()
