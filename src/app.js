@@ -1,9 +1,9 @@
 import './style.css'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import * as dat from 'dat.gui'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+import * as dat from 'dat.gui'
 
 /**
  * Base
@@ -29,16 +29,10 @@ gltfLoader.setDRACOLoader(dracoLoader)
 let mixer = null
 
 gltfLoader.load(
-    '/models/Fox/glTF/Fox.gltf',
+    '/models/hamburger.glb',
     (gltf) =>
     {
-        gltf.scene.scale.set(0.025, 0.025, 0.025)
         scene.add(gltf.scene)
-
-        // Animation
-        mixer = new THREE.AnimationMixer(gltf.scene)
-        const action = mixer.clipAction(gltf.animations[2])
-        action.play()
     }
 )
 
@@ -46,7 +40,7 @@ gltfLoader.load(
  * Floor
  */
 const floor = new THREE.Mesh(
-    new THREE.PlaneBufferGeometry(10, 10),
+    new THREE.PlaneBufferGeometry(50, 50),
     new THREE.MeshStandardMaterial({
         color: '#444444',
         metalness: 0,
@@ -71,7 +65,7 @@ directionalLight.shadow.camera.left = - 7
 directionalLight.shadow.camera.top = 7
 directionalLight.shadow.camera.right = 7
 directionalLight.shadow.camera.bottom = - 7
-directionalLight.position.set(- 5, 5, 0)
+directionalLight.position.set(5, 5, 5)
 scene.add(directionalLight)
 
 /**
@@ -102,12 +96,12 @@ window.addEventListener('resize', () =>
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.set(2, 2, 2)
+camera.position.set(- 8, 4, 8)
 scene.add(camera)
 
 // Controls
 const controls = new OrbitControls(camera, canvas)
-controls.target.set(0, 0.75, 0)
+controls.target.set(0, 1, 0)
 controls.enableDamping = true
 
 /**
@@ -133,7 +127,6 @@ const tick = () =>
     const deltaTime = elapsedTime - previousTime
     previousTime = elapsedTime
 
-    // Model animation
     if(mixer)
     {
         mixer.update(deltaTime)
