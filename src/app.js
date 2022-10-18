@@ -1,14 +1,30 @@
 import "./style.css";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import {OrbitControls} from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "dat.gui";
+import CANNON from "cannon";
 
+/**
+ * Debug
+ */
+const gui = new dat.GUI();
+const debugObject = {}
+debugObject.createSphere = () => {
+    createSphere(Math.random() * 0.5, {
+        x: (Math.random() - 0.5) * 3, y: 3, z: (Math.random() - 0.5) * 3
+    })
+}
+gui.add(debugObject, 'createSphere')
+
+debugObject.createBox = () => {
+    createBox(Math.random(), Math.random(), Math.random(), {
+        x: (Math.random() - 0.5) * 3, y: 3, z: (Math.random() - 0.5) * 3
+    })
+}
+gui.add(debugObject, 'createBox')
 /**
  * Base
  */
-// Debug
-const gui = new dat.GUI();
-
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
 
@@ -16,126 +32,115 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 
 /**
- * Objects
+ * Textures
  */
-const object1 = new THREE.Mesh(
-  new THREE.SphereGeometry(0.5, 16, 16),
-  new THREE.MeshBasicMaterial({ color: "#ff0000" })
-);
-object1.position.x = -2;
+const textureLoader = new THREE.TextureLoader();
+const cubeTextureLoader = new THREE.CubeTextureLoader();
 
-const object2 = new THREE.Mesh(
-  new THREE.SphereGeometry(0.5, 16, 16),
-  new THREE.MeshBasicMaterial({ color: "#ff0000" })
-);
+const environmentMapTexture = cubeTextureLoader.load(["../static/textures/environmentMaps1/0/px.png", "../static/textures/environmentMaps1/0/nx.png", "../static/textures/environmentMaps1/0/py.png", "../static/textures/environmentMaps1/0/ny.png", "../static/textures/environmentMaps1/0/pz.png", "../static/textures/environmentMaps1/0/nz.png",]);
 
-const object3 = new THREE.Mesh(
-  new THREE.SphereGeometry(0.5, 16, 16),
-  new THREE.MeshBasicMaterial({ color: "#ff0000" })
-);
-object3.position.x = 2;
+//physics
+const world = new CANNON.World();
+world.gravity.set(0, -9.82, 0);
 
-scene.add(object1, object2, object3);
+//Materials
+const defaultMaterial = new CANNON.Material("default");
+const defaultContactMaterial = new CANNON.ContactMaterial(defaultMaterial, defaultMaterial, {
+    friction: 0.1, restitution: 0.7,
+});
+world.addContactMaterial(defaultContactMaterial)
+//也可以直接给世界添加上材质
+world.defaultContactMaterial = defaultContactMaterial
 
-//光线投射Raycaster
-// 这个类用于进行raycasting（光线投射）。 光线投射用于进行鼠标拾取（在三维空间中计算出鼠标移过了什么物体）。
-// Raycaster( origin : Vector3, direction : Vector3, near : Float, far : Float )
-// origin —— 光线投射的原点向量。
-// direction —— 向射线提供方向的方向向量，应当被标准化。
-// near —— 返回的所有结果比near远。near不能为负值，其默认值为0。
-// far —— 返回的所有结果都比far近。far不能小于near，其默认值为Infinity（正无穷。）
-// 这将创建一个新的raycaster对象。
-// .set ( origin : Vector3, direction : Vector3 ) : undefined
-// origin —— 光线投射的原点向量。
-// direction —— 为光线提供方向的标准化方向向量。
-// 使用一个新的原点和方向来更新射线。
-// .normalize () : this
-// 将该向量转换为单位向量（unit vector）， 也就是说，将该向量的方向设置为和原向量相同，但是其长度（length）为1。
-// distance —— 射线投射原点和相交部分之间的距离。
-// point —— 相交部分的点（世界坐标）
-// face —— 相交的面
-// faceIndex —— 相交的面的索引
-// object —— 相交的物体
-// uv —— 相交部分的点的UV坐标。
-// uv2 —— Second set of U,V coordinates at point of intersection
-// instanceId – The index number of the instance where the ray intersects the InstancedMesh
-// 当计算这条射线是否和物体相交的时候，Raycaster将传入的对象委托给raycast方法。 这将可以让mesh对于光线投射的响应不同于lines和pointclouds。
-// 请注意：对于网格来说，面必须朝向射线的原点，以便其能够被检测到。
-// 用于交互的射线穿过面的背侧时，将不会被检测到。如果需要对物体中面的两侧进行光线投射， 你需要将material中的side属性设置为THREE.DoubleSide。
-const raycaster = new THREE.Raycaster();
+//sphere
+// const sphereShape = new CANNON.Sphere(0.5);
+// const sphereBody = new CANNON.Body({
+//     mass: 1, position: new CANNON.Vec3(0, 3, 0), shape: sphereShape,
+// });
+// world.addBody(sphereBody);
 
-// const rayOrigin = new THREE.Vector3(-3, 0, 0);
-// const rayDirection = new THREE.Vector3(10, 0, 0);
-// rayDirection.normalize();
+//Floor
+const floorShape = new CANNON.Plane();
+const floorBody = new CANNON.Body();
+floorBody.mass = 0;
+floorBody.addShape(floorShape);
+//四元数描述了 3D 空间中的旋转。四元数在数学上定义为 Q = x i + y j + z*k + w，其中 (i,j,k) 是虚基向量。
+// (x,y,z) 可以看作是与旋转轴相关的向量，而实数乘数 w 与旋转量相关。
+floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5); //四元组
+// applyLocalForce ( force  localPoint )
+// Defined in src/objects/Body.js:665
+// 对身体的局部点施力。
+//     Parameters:
+// force Vec3
+// 要应用的力矢量，在主体框架中本地定义。 localPoint Vec3 身体中要施加力的局部点。
+// sphereBody.applyLocalForce(new CANNON.Vec3(150, 0, 0), new CANNON.Vec3(0, 0, 0))
+world.addBody(floorBody);
 
-// raycaster.set(rayOrigin, rayDirection);
 
-// const intersect = raycaster.intersectObject(object2);
-// console.log(intersect);
-// const intersects = raycaster.intersectObjects([object1, object2, object3]);
-// console.log(intersects);
+/**
+ * Test sphere
+ */
+// const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), new THREE.MeshStandardMaterial({
+//     metalness: 0.3, roughness: 0.4, envMap: environmentMapTexture,
+// }));
+// sphere.castShadow = true;
+// sphere.position.y = 0.5;
+// scene.add(sphere);
+
+/**
+ * Floor
+ */
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({
+    color: "#777777", metalness: 0.3, roughness: 0.4, envMap: environmentMapTexture,
+}));
+floor.receiveShadow = true;
+floor.rotation.x = -Math.PI * 0.5;
+scene.add(floor);
+
+/**
+ * Lights
+ */
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+scene.add(ambientLight);
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.2);
+directionalLight.castShadow = true;
+directionalLight.shadow.mapSize.set(1024, 1024);
+directionalLight.shadow.camera.far = 15;
+directionalLight.shadow.camera.left = -7;
+directionalLight.shadow.camera.top = 7;
+directionalLight.shadow.camera.right = 7;
+directionalLight.shadow.camera.bottom = -7;
+directionalLight.position.set(5, 5, 5);
+scene.add(directionalLight);
 
 /**
  * Sizes
  */
 const sizes = {
-  width: window.innerWidth,
-  height: window.innerHeight,
+    width: window.innerWidth, height: window.innerHeight,
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
-  sizes.width = window.innerWidth;
-  sizes.height = window.innerHeight;
+    // Update sizes
+    sizes.width = window.innerWidth;
+    sizes.height = window.innerHeight;
 
-  // Update camera
-  camera.aspect = sizes.width / sizes.height;
-  camera.updateProjectionMatrix();
+    // Update camera
+    camera.aspect = sizes.width / sizes.height;
+    camera.updateProjectionMatrix();
 
-  // Update renderer
-  renderer.setSize(sizes.width, sizes.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-});
-
-/**
- * Mouse
- */
-const mouse = new THREE.Vector2();
-
-window.addEventListener("mousemove", (event) => {
-  mouse.x = (event.clientX / sizes.width) * 2 - 1;
-  mouse.y = -(event.clientY / sizes.height) * 2 + 1;
-});
-
-window.addEventListener("click", () => {
-  if (currentIntersect) {
-    switch (currentIntersect.object) {
-      case object1:
-        console.log("click on object 1");
-        break;
-
-      case object2:
-        console.log("click on object 2");
-        break;
-
-      case object3:
-        console.log("click on object 3");
-        break;
-    }
-  }
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(
-  75,
-  sizes.width / sizes.height,
-  0.1,
-  100
-);
-camera.position.z = 3;
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
+camera.position.set(-3, 3, 3);
 scene.add(camera);
 
 // Controls
@@ -146,59 +151,123 @@ controls.enableDamping = true;
  * Renderer
  */
 const renderer = new THREE.WebGLRenderer({
-  canvas: canvas,
+    canvas: canvas,
 });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+
+//Sphere
+const sphereGeometry = new THREE.SphereGeometry(1, 20, 20)
+const sphereGeometryMaterial = new THREE.MeshStandardMaterial({
+    metalness: 0.3, roughness: 0.4, envMap: environmentMapTexture
+})
+const objectsToUpdate = []
+const createSphere = (radius, position) => {
+    const mesh = new THREE.Mesh(sphereGeometry, sphereGeometryMaterial)
+    mesh.scale.set(radius, radius, radius)
+    mesh.castShadow = true
+    mesh.position.copy(position)
+    scene.add(mesh)
+
+    const shape = new CANNON.Sphere(radius)
+    const body = new CANNON.Body({
+        mass: 1, shape, material: defaultMaterial
+    })
+
+    body.position.copy(position)
+    world.addBody(body)
+
+
+    objectsToUpdate.push({mesh, body})
+}
+// createSphere(0.5, {x: 0, y: 3, z: 0})
+console.log(objectsToUpdate)
+
+
+// Create box
+const boxGeometry = new THREE.BoxBufferGeometry(1, 1, 1)
+const boxMaterial = new THREE.MeshStandardMaterial({
+    metalness: 0.3, roughness: 0.4, envMap: environmentMapTexture
+})
+const createBox = (width, height, depth, position) => {
+    // Three.js mesh
+    const mesh = new THREE.Mesh(boxGeometry, boxMaterial)
+    mesh.scale.set(width, height, depth)
+    mesh.castShadow = true
+    mesh.position.copy(position)
+    scene.add(mesh)
+
+    // Cannon.js body
+    const shape = new CANNON.Box(new CANNON.Vec3(width * 0.5, height * 0.5, depth * 0.5))
+
+    const body = new CANNON.Body({
+        mass: 1, position: new CANNON.Vec3(0, 3, 0), shape: shape, material: defaultMaterial
+    })
+    body.position.copy(position)
+    // body.addEventListener('collide', playHitSound)
+    world.addBody(body)
+
+    // Save in objects
+    objectsToUpdate.push({mesh, body})
+}
+
+// createBox(1, 1.5, 2, {x: 0, y: 3, z: 0})
+
 
 /**
  * Animate
  */
 const clock = new THREE.Clock();
-let currentIntersect = null;
+let oldElapseTime = 0;
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+    const elapsedTime = clock.getElapsedTime();
 
-  ////Aanimate objects
-  object1.position.y = Math.sin(elapsedTime * 0.3) * 1.5;
-  object2.position.y = Math.sin(elapsedTime * 0.8) * 1.5;
-  object3.position.y = Math.sin(elapsedTime * 1.4) * 1.5;
+    // Update controls
+    //   step ( dt  [timeSinceLastCalled]  [maxSubSteps=10] )
+    // 定义于 src/world/World.js:443
+    // 及时推进物理世界。
+    // 有两种模式。简单模式是固定时间步长，没有插值。在这种情况下，您只使用第一个参数。
+    // 第二种情况使用插值。你还提供了自上次使用函数以来的时间，以及要采取的最大固定时间步长。
+    // 参数：
+    // dt 数字
+    // 要使用的固定时间步长。
+    // [timeSinceLastCalled] 号码 可选
+    // 自上次调用函数以来经过的时间。
+    // [maxSubSteps=10] 号码 可选
+    // 每个函数调用要执行的最大固定步骤数。
+    const deltaTim = elapsedTime - oldElapseTime;
+    oldElapseTime = elapsedTime;
 
-  //.setFromCamera ( coords : Vector2, camera : Camera ) : undefined
-  // coords —— 在标准化设备坐标中鼠标的二维坐标 —— X分量与Y分量应当在-1到1之间。
-  // camera —— 射线所来源的摄像机。
-  // 使用一个新的原点和方向来更新射线。
-  //   / Cast a ray from the mouse
-  raycaster.setFromCamera(mouse, camera);
-  const objectsToTest = [object1, object2, object3];
-  const intersects = raycaster.intersectObjects(objectsToTest);
-  for (const object of objectsToTest) {
-    object.material.color.set("#ff0000");
-  }
-  for (const intersect of intersects) {
-    intersect.object.material.color.set("#0000ff");
-  }
+    //Upadate physics world
+    //applyForce ( force  worldPoint )
+    // 对世界点施加力。例如，这可以是 Body 表面上的一个点。以这种方式施加力将增加 Body.force 和 Body.torque。
+    // force Vec3
+    // 要添加的力的大小。
+    // worldPoint Vec3
+    // 施加力的世界点。
+    // sphereBody.applyForce(new CANNON.Vec3(-0.5, 0, 0), sphereBody.position)
+    world.step(1 / 60, deltaTim, 3);
 
-  if (intersects.length) {
-    if (!currentIntersect) {
-      console.log("mouse enter");
+    for (const object of objectsToUpdate) {
+        object.mesh.position.copy(object.body.position)
+        //.quaternion : Quaternion
+        // 表示对象局部旋转的Quaternion（四元数）。
+        object.mesh.quaternion.copy(object.body.quaternion)
     }
-    currentIntersect = intersects[0];
-  } else {
-    if (currentIntersect) {
-      console.log("mouse leave");
-    }
-    currentIntersect = null;
-  }
 
-  // Update controls
-  controls.update();
 
-  // Render
-  renderer.render(scene, camera);
+    // sphere.position.copy(sphereBody.position);
 
-  // Call tick again on the next frame
-  window.requestAnimationFrame(tick);
+    controls.update();
+
+    // Render
+    renderer.render(scene, camera);
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick);
 };
 
 tick();
