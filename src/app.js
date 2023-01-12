@@ -2,8 +2,11 @@ import './style.css'
 import * as THREE from 'three'
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'dat.gui'
-import testVertexShader from './shaders/test/vertex.glsl'
-import testFragmentShader from './shaders/test/fragment.glsl'
+// .glsl是着色器语法，并不需要去解析它，只要将它的内容作为字符串传给threejs，threejs自然会调用相关方法去解析它。
+// 所以，在导入时，告诉vite，以字符串形式加载.glsl文件即可，即在文件后面加上“raw”参数即可：
+import testVertexShader from './shaders/test/vertex.glsl?raw'
+import testFragmentShader from './shaders/test/fragment.glsl?raw'
+
 /*
 * learn what is shader
 * create our own simple shader
@@ -39,7 +42,9 @@ const geometry = new THREE.PlaneGeometry(1, 1, 32, 32)
 const material = new THREE.RawShaderMaterial({
     // projectionMatrix(投影矩阵) viewMatrix(视图矩阵) modelMatrix(模型矩阵)
     vertexShader: testVertexShader,//'顶点着色器'
-    fragmentShader: testFragmentShader //'片段着色器'
+    fragmentShader: testFragmentShader, //'片段着色器'
+    // wireframe: true
+    side: THREE.DoubleSide
 })
 
 // Mesh
