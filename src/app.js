@@ -1,8 +1,15 @@
 import './style.css'
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'dat.gui'
-
+import testVertexShader from './shaders/test/vertex.glsl'
+import testFragmentShader from './shaders/test/fragment.glsl'
+/*
+* learn what is shader
+* create our own simple shader
+* Learn the syntax
+* do some exercises(练习题)
+* */
 /**
  * Base
  */
@@ -24,10 +31,16 @@ const textureLoader = new THREE.TextureLoader()
  * Test mesh
  */
 // Geometry
-const geometry = new THREE.PlaneBufferGeometry(1, 1, 32, 32)
+const geometry = new THREE.PlaneGeometry(1, 1, 32, 32)
 
-// Material
-const material = new THREE.MeshBasicMaterial()
+// Material (Raw:原始的)
+// 原始着色器材质(RawShaderMaterial)
+// 此类的工作方式与ShaderMaterial类似，不同之处在于内置的 >uniforms< 和 >attributes< 的定义不会自动添加到GLSL shader代码中。
+const material = new THREE.RawShaderMaterial({
+    // projectionMatrix(投影矩阵) viewMatrix(视图矩阵) modelMatrix(模型矩阵)
+    vertexShader: testVertexShader,//'顶点着色器'
+    fragmentShader: testFragmentShader //'片段着色器'
+})
 
 // Mesh
 const mesh = new THREE.Mesh(geometry, material)
@@ -37,12 +50,10 @@ scene.add(mesh)
  * Sizes
  */
 const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight
+    width: window.innerWidth, height: window.innerHeight
 }
 
-window.addEventListener('resize', () =>
-{
+window.addEventListener('resize', () => {
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
@@ -61,7 +72,7 @@ window.addEventListener('resize', () =>
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.set(0.25, - 0.25, 1)
+camera.position.set(0.25, -0.25, 1)
 scene.add(camera)
 
 // Controls
@@ -82,8 +93,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  */
 const clock = new THREE.Clock()
 
-const tick = () =>
-{
+const tick = () => {
     const elapsedTime = clock.getElapsedTime()
 
     // Update controls
