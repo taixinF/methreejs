@@ -1,18 +1,34 @@
-//如果使用ShaderMaterial 不需要了
-//内置attributes和uniforms与代码一起传递到shaders。
-//如果您不希望WebGLProgram向shader代码添加任何内容，则可以使用RawShaderMaterial而不是此类。
-//precision mediump float;
-
-//要放在上面做作色器下面
-uniform vec3 uColor;
-//纹理采用smapler
-uniform sampler2D uTexture;
-
 varying vec2 vUv;
-varying float vElevation;
 void main() {
-    vec4 textureColor = texture2D(uTexture, vUv);
-    textureColor.rgb *= vElevation * 2.0 + 0.5;
-    //r g b ?
-    gl_FragColor = textureColor;
+    //    float strength = vUv.x;
+    //    float strength = vUv.y;
+    //    float strength = 1.0-vUv.y;
+    //    float strength = vUv.y*10.0;
+    //    float strength = vUv.y * 10.0;
+    //    float strength = mod(vUv.y * 10.0, 1.0);
+    //    float strength = mod(vUv.y * 10.0, 1.0);
+    //    //step (等到的值，赋予的值)
+    //    strength = step(0.5, strength);
+    //    float strength = mod(vUv.y * 10.0, 1.0);
+    //    strength = step(0.3, strength);
+    //    float strength = step(0.8, mod(vUv.x * 10.0, 1.0));
+    //    strength += step(0.8, mod(vUv.y * 10.0, 1.0));
+    //    float strength = step (0.8, mod(vUv.x * 10.0, 1.0));
+    //    strength *= step(0.8, mod(vUv.y * 10.0, 1.0));
+    //    float strength = step(0.4, mod(vUv.x * 10.0, 1.0));
+    //    strength *= step(0.8, mod(vUv.y * 10.0, 1.0));
+    //    float barX = step(0.4, mod(vUv.x * 10.0, 1.0));
+    //    barX *= step(0.8, mod(vUv.y * 10.0+0.2, 1.0));
+    //    float barY = step(0.8, mod(vUv.x * 10.0+0.2, 1.0));
+    //    barY *= step(0.4, mod(vUv.y * 10.0, 1.0));
+    //    float strength = barY + barX;
+    //    float strength = abs(vUv.x - 0.5);
+    //    float strength = min(abs(vUv.x - 0.5), abs(vUv.y - 0.5));
+    //    float strength = max(abs(vUv.x - 0.5), abs(vUv.y - 0.5));
+    //    float strength = step(0.2, max(abs(vUv.x - 0.5), abs(vUv.y - 0.5)));
+    //    float square1 = step(0.2, max(abs(vUv.x - 0.5), abs(vUv.y - 0.5)));
+    //    float square2 = 1.0 - step(0.25, max(abs(vUv.x - 0.5), abs(vUv.y - 0.5)));
+    //    float strength = square1 * square2;
+    float strength = vUv.x;
+    gl_FragColor = vec4(strength, strength, strength, 1.0);
 }

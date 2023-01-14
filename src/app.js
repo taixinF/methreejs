@@ -1,9 +1,9 @@
 import './style.css'
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'dat.gui'
-import testVertexShader from './shaders/test/vertex.glsl'
-import testFragmentShader from './shaders/test/fragment.glsl'
+import testVertexShader from './shaders/test/vertex.glsl?raw'
+import testFragmentShader from './shaders/test/fragment.glsl?raw'
 
 /**
  * Base
@@ -21,8 +21,9 @@ const scene = new THREE.Scene()
  * Test mesh
  */
 // Geometry
-const geometry = new THREE.PlaneBufferGeometry(1, 1, 32, 32)
+const geometry = new THREE.PlaneGeometry(1, 1, 32, 32)
 
+console.log(geometry.attributes)
 // Material
 const material = new THREE.ShaderMaterial({
     vertexShader: testVertexShader,
@@ -42,8 +43,7 @@ const sizes = {
     height: window.innerHeight
 }
 
-window.addEventListener('resize', () =>
-{
+window.addEventListener('resize', () => {
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
@@ -62,7 +62,7 @@ window.addEventListener('resize', () =>
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.set(0.25, - 0.25, 1)
+camera.position.set(0.25, -0.25, 1)
 scene.add(camera)
 
 // Controls
@@ -81,8 +81,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 /**
  * Animate
  */
-const tick = () =>
-{
+const tick = () => {
     // Update controls
     controls.update()
 
