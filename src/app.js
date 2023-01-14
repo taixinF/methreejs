@@ -1,9 +1,8 @@
 import './style.css'
 import * as THREE from 'three'
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js'
 import * as dat from 'dat.gui'
-import testVertexShader from './shaders/test/vertex.glsl?raw'
-import testFragmentShader from './shaders/test/fragment.glsl?raw'
 
 /**
  * Base
@@ -18,22 +17,85 @@ const canvas = document.querySelector('canvas.webgl')
 const scene = new THREE.Scene()
 
 /**
- * Test mesh
+ * Loaders
  */
-// Geometry
-const geometry = new THREE.PlaneGeometry(1, 1, 32, 32)
+const textureLoader = new THREE.TextureLoader()
+const gltfLoader = new GLTFLoader()
+const cubeTextureLoader = new THREE.CubeTextureLoader()
 
-console.log(geometry.attributes)
+/**
+ * Update all materials
+ */
+const updateAllMaterials = () => {
+    scene.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+            child.material.envMapIntensity = 5
+            child.material.needsUpdate = true
+            child.castShadow = true
+            child.receiveShadow = true
+        }
+    })
+}
+
+/**
+ * Environment map
+ */
+const environmentMap = cubeTextureLoader.load([
+    '../static/textures/environmentMaps2/0/px.jpg',
+    '../static/textures/environmentMaps2/0/nx.jpg',
+    '../static/textures/environmentMaps2/0/py.jpg',
+    '../static/textures/environmentMaps2/0/ny.jpg',
+    '../static/textures/environmentMaps2/0/pz.jpg',
+    '../static/textures/environmentMaps2/0/nz.jpg'
+])
+environmentMap.encoding = THREE.sRGBEncoding
+
+scene.background = environmentMap
+scene.environment = environmentMap
+
+/**
+ * Material
+ */
+
+// Textures
+const mapTexture = textureLoader.load('../static/models/LeePerrySmith/color.jpg')
+mapTexture.encoding = THREE.sRGBEncoding
+
+const normalTexture = textureLoader.load('../static/models/LeePerrySmith/normal.jpg')
+
 // Material
-const material = new THREE.ShaderMaterial({
-    vertexShader: testVertexShader,
-    fragmentShader: testFragmentShader,
-    side: THREE.DoubleSide
+const material = new THREE.MeshStandardMaterial({
+    map: mapTexture,
+    normalMap: normalTexture
 })
 
-// Mesh
-const mesh = new THREE.Mesh(geometry, material)
-scene.add(mesh)
+/**
+ * Models
+ */
+gltfLoader.load(
+    '../static/models/LeePerrySmith/LeePerrySmith.glb',
+    (gltf) => {
+        // Model
+        const mesh = gltf.scene.children[0]
+        mesh.rotation.y = Math.PI * 0.5
+        mesh.material = material
+        scene.add(mesh)
+
+        // Update materials
+        updateAllMaterials()
+    }
+)
+
+/**
+ * Lights
+ */
+const directionalLight = new THREE.DirectionalLight('#ffffff', 3)
+directionalLight.castShadow = true
+directionalLight.shadow.mapSize.set(1024, 1024)
+directionalLight.shadow.camera.far = 15
+directionalLight.shadow.normalBias = 0.05
+directionalLight.position.set(0.25, 2, -2.25)
+scene.add(directionalLight)
 
 /**
  * Sizes
@@ -62,7 +124,7 @@ window.addEventListener('resize', () => {
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.set(0.25, -0.25, 1)
+camera.position.set(4, 1, -4)
 scene.add(camera)
 
 // Controls
@@ -73,15 +135,26 @@ controls.enableDamping = true
  * Renderer
  */
 const renderer = new THREE.WebGLRenderer({
-    canvas: canvas
+    canvas: canvas,
+    antialias: true
 })
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFShadowMap
+renderer.physicallyCorrectLights = true
+renderer.outputEncoding = THREE.sRGBEncoding
+renderer.toneMapping = THREE.ACESFilmicToneMapping
+renderer.toneMappingExposure = 1
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 /**
  * Animate
  */
+const clock = new THREE.Clock()
+
 const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+
     // Update controls
     controls.update()
 
